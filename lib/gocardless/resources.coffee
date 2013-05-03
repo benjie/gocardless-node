@@ -110,11 +110,6 @@ class Resource
       return callback err if err
       callback null, new @ res
 
-  @find: (cls, id) ->
-    if not gocardless.client
-      raise ClientError("You must set your account details first")
-    return cls.findWithClient(id, gocardless.client)
-
 class Merchant extends Resource
   endpoint: "/merchants/:id"
   date_fields: _super::date_fields.concat ["next_payout_date"]
@@ -124,9 +119,9 @@ class Subscription extends Resource
   reference_fields: ["user_id", "merchant_id"]
   date_fields: _super::date_fields.concat ["expires_at", "next_interval_start"]
 
-  cancel: ->
+  cancel: (callback) ->
     path = "#{@endpoint.replace(":id", @id)}/cancel"
-    @client.apiPut(path)
+    @client.apiPut(path, null, callback)
 
 class PreAuthorization extends Resource
   endpoint: "/pre_authorizations/:id"
@@ -134,18 +129,18 @@ class PreAuthorization extends Resource
   reference_fields: ["user_id", "merchant_id"]
 
   createBill: (amount, name=null, description=null) ->
-    return Bill.createUnderPreauth(amount, @id, @client, name=name, description=description)
+    return Bill.createUnderPreauth(amount, @id, @client, {name:name, description:description})
 
-  cancel: ->
+  cancel: (callback) ->
     path = "#{@endpoint.replace(":id", @id)}/cancel"
-    @client.apiPut(path)
+    @client.apiPut(path, null, callback)
 
 class Bill extends Resource
   endpoint: "/bills/:id"
   date_fields: _super::date_fields.concat ["paid_at"]
   reference_fields: ["merchant_id", "user_id"]
 
-  @createUnderPreauth: (amount, pre_auth_id, client, name=null, description=null) ->
+  @createUnderPreauth: (amount, pre_auth_id, client, {name, description}, callback) ->
     path = "/bills"
     params = {
       "bill": {
@@ -157,7 +152,9 @@ class Bill extends Resource
       params["bill"]["name"] = name
     if description
       params["bill"]["description"] = description
-    return Bill(client.apiPost(path, params), client)
+    client.apiPost path, params, (err, res) ->
+      return callback err if err
+      callback null, new Bill res, client
 
   retry: ->
     path = "#{@endpoint.replace(":id", @id)}/retry"

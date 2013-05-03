@@ -8,12 +8,8 @@ utils = gocardless.utils
 Client = gocardless.Client
 ClientError = gocardless.exceptions.ClientError
 
-mock_account_details = {
-  'app_id': 'id02'
-  'app_secret': 'sec01'
-  'access_token': 'tok01'
-  'merchant_id': fixtures.merchant_json["id"]
-}
+mock_account_details = fixtures.mock_account_details
+
 process.env.GOCARDLESS_ENVIRONMENT = 'sandbox'
 
 createMockClient = (details) ->

@@ -1,3 +1,5 @@
+MERCHANT_ID = "WOQRUJU9OH2HH1"
+
 module.exports =
   createMockAttrs: (to_merge) ->
     ###
@@ -13,10 +15,17 @@ module.exports =
     to_merge[k] = v for k, v of attrs
     return to_merge
 
+  mock_account_details: {
+    'app_id': 'id02'
+    'app_secret': 'sec01'
+    'access_token': 'tok01'
+    'merchant_id': MERCHANT_ID
+  }
+
   merchant_json: {
      "created_at": "2011-11-18T17:07:09Z",
      "description": null,
-     "id": "WOQRUJU9OH2HH1",
+     "id": MERCHANT_ID,
      "name": "Tom's Delicious Chicken Shop",
      "first_name": "Tom",
      "last_name": "Blomfield",
