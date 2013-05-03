@@ -1,10 +1,19 @@
 gocardless = require '../lib'
+should = require 'should'
+nock = require 'nock'
+
+TESTHOST = "https://test.local"
 
 request = null
+api = nock(TESTHOST)
 
 describe 'Request', ->
   before ->
-    request = new gocardless.Request('get', 'http://test.com')
+    PATH = "/api/v1/blah/test/thing"
+    request = new gocardless.Request('get', "#{TESTHOST}#{PATH}")
+    api.persist()
+      .get(PATH).reply(200, '{"a":"b"}')
+      .post(PATH).reply(200, '{"a":"b"}')
 
   it 'should allow valid methods', ->
     for method in ['get', 'post', 'put']
@@ -31,28 +40,24 @@ describe 'Request', ->
       request.setPayload({'a': 'b'})
       request._opts['headers']['Content-Type'].should.equal 'application/json'
 
-###
-  testSetPayloadEncodesPayload: ->
-    request.setPayload({'a': 'b'})
-    @assertEqual(request._opts['data'], '{"a": "b"}')
+    it 'should encode the payload', ->
+      request.setPayload({'a': 'b'})
+      request._opts['data'].should.equal '{"a":"b"}'
 
-  @mock.patch('gocardless.request.requests')
-  testPerformCallsGetForGets: (mock_requests) ->
-    mock_requests.get.return_value.content = '{"a": "b"}'
-    request.perform()
-    mock_requests.get.assertCalledOnceWith(mock.ANY, headers=mock.ANY)
+  it 'should perform callback once', (done) ->
+    # XXX: Ensure callback is called but once
+    callback = (err, res) ->
+      should.not.exist(err)
+      should.exist(res)
+      res.should.eql {"a":"b"}
+      done()
+    request.perform callback
 
-  @mock.patch('gocardless.request.requests')
-  testPerformCallsPostForPosts: (mock_requests) ->
-    mock_requests.post.return_value.content = '{"a": "b"}'
+  it 'should perform callback once for POST too', (done) ->
     request._method = 'post'
-    request.perform()
-    mock_requests.post.assertCalledOnceWith(mock.ANY, headers=mock.ANY)
-
-  @mock.patch('gocardless.request.requests.get')
-  testPerformDecodesJson: (mock_get) ->
-    response = mock.Mock()
-    response.content = '{"a": "b"}'
-    mock_get.return_value = response
-    @assertEqual(request.perform(), {'a': 'b'})
-###
+    callback = (err, res) ->
+      should.not.exist(err)
+      should.exist(res)
+      res.should.eql {"a":"b"}
+      done()
+    request.perform callback
