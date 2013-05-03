@@ -1,5 +1,7 @@
 gocardless = require '../'
 
+Request = gocardless.Request
+
 utils = gocardless.utils
 {ClientError, SignatureError} = gocardless.exceptions
 
@@ -11,7 +13,7 @@ BASE_URLS = {
 
 module.exports = class GoCardlessClient
   constructor: ({@app_id, @app_secret, @access_token, @merchant_id, @environment}) ->
-    @environment ?= process.ENV['GOCARDLESS_ENVIRONMENT']
+    @environment ?= process.env['GOCARDLESS_ENVIRONMENT']
 
     throw new Error("app_id is required") unless @app_id?
     throw new Error("app_secret is required") unless @app_secret?
@@ -19,7 +21,7 @@ module.exports = class GoCardlessClient
     throw new Error("merchant_id is required") unless @merchant_id?
     throw new Error("environment must be 'production' or 'sandbox'") unless ['production', 'sandbox'].indexOf(@environment) isnt -1
 
-    @base_url = BASE_URLS[environment]
+    @base_url = BASE_URLS[@environment]
 
   apiGet: (path, callback) ->
     ###
