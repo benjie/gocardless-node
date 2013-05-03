@@ -1,8 +1,7 @@
 class GoCardlessError extends Error
-  constructor: -> super
+  constructor: (@message) ->
+    super
 class ClientError extends GoCardlessError
-  constructor: -> super
 class SignatureError extends GoCardlessError
-  constructor: -> super
 
 module.exports = {ClientError, SignatureError}

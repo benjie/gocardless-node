@@ -21,7 +21,7 @@ module.exports = class GoCardlessClient
     throw new Error("merchant_id is required") unless @merchant_id?
     throw new Error("environment must be 'production' or 'sandbox'") unless ['production', 'sandbox'].indexOf(@environment) isnt -1
 
-    @base_url = BASE_URLS[@environment]
+    @base_url = GoCardlessClient.base_url ? BASE_URLS[@environment]
 
   apiGet: (path, callback) ->
     ###
@@ -64,7 +64,6 @@ module.exports = class GoCardlessClient
     ###
     request_url = @base_url + API_PATH + path
     request = new Request(method, request_url)
-    console.log("Executing request to #{request_url}")
 
     request.useBearerAuth(@access_token)
 

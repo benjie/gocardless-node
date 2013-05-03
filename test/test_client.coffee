@@ -12,8 +12,8 @@ mock_account_details = {
   'app_secret': 'sec01'
   'access_token': 'tok01'
   'merchant_id': fixtures.merchant_json["id"]
-  'environment': 'sandbox'
 }
+process.env.GOCARDLESS_ENVIRONMENT = 'sandbox'
 
 createMockClient = (details) ->
   return new Client(details)
@@ -24,9 +24,20 @@ getUrlParams = (url) ->
 describe 'Client', ->
   account_details = null
   client = null
+  old_env = null
+  base_url = null
+
   before ->
     account_details = JSON.parse JSON.stringify mock_account_details
     client = createMockClient(account_details)
+
+  beforeEach ->
+    old_env = process.env.GOCARDLESS_ENVIRONMENT
+    base_url = Client.base_url
+
+  afterEach ->
+    process.env.GOCARDLESS_ENVIRONMENT = old_env
+    Client.base_url = base_url
 
   it 'error raises clienterror', ->
     gently.expect gocardless.Request.prototype, 'perform', (cb) ->
@@ -35,4 +46,60 @@ describe 'Client', ->
       should.not.exist res
       should.exist err
       err.should.be.instanceOf ClientError
+      err.message.should.equal "Error calling API, message was: anerrormessage"
+
+  it 'error when result is list', ->
+    #Test for an issue where the code which checked if
+    #the response was an error failed because it did
+    #not first check if the response was a dictionary.
+    gently.expect gocardless.Request.prototype, 'perform', (cb) ->
+      cb null, ["one", "two"]
+    client.apiGet "/somepath", (err, res) ->
+      should.not.exist err
+      should.exist res
+      res.should.eql ["one", "two"]
+
+  it 'base url returns the correct url for production', ->
+    process.env.GOCARDLESS_ENVIRONMENT = 'production'
+    myclient = createMockClient(account_details)
+    myclient.base_url.should.equal 'https://gocardless.com'
+
+  it 'base url returns the correct url for sandbox', ->
+    process.env.GOCARDLESS_ENVIRONMENT = 'sandbox'
+    myclient = createMockClient(account_details)
+    myclient.base_url.should.equal 'https://sandbox.gocardless.com'
+
+  it 'base url returns the correct url when set manually', ->
+    Client.base_url = 'https://abc.gocardless.com'
+    myclient = createMockClient(account_details)
+    myclient.base_url.should.equal 'https://abc.gocardless.com'
+
+  it 'get merchant'
+  ###, ->
+    gently.expect gocardless.Request.prototype, 'perform', (cb) ->
+      cb null, fixtures.merchant_json
+
+    client.merchant (err, merchant) ->
+      should.not.exist err
+      should.exist merchant
+      merchant.id.should.equal account_details.merchant_id
+      ###
+
+  _getResourceTester = (resource_name, resource_fixture) ->
+    expected_klass = getattr(sys.modules["gocardless.resources"], utils.camelize(resource_name))
+    WiTh patch.object(client, 'api_get') ->
+      client.api_get.return_value = resource_fixture
+      obj = getattr(client, resource_name)("1")
+      resource_fixture["id"].should.equal obj.id
+      @assertIsInstance(obj, expected_klass)
+
+  it 'get subscription'
+  ###, ->
+    _getResourceTester("subscription", fixtures.subscription_json)
+    ###
+
+  it 'get user'
+  ###, ->
+    _getResourceTester("user", createMockAttrs({}))
+    ###
 
