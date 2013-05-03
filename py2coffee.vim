@@ -11,7 +11,7 @@ silent! %s/\v:$//
 silent! %s/\v\{0\}(.*)\.format\((.{-})\)/#{\2}\1
 silent! %s/__init__/constructor/
 silent! %s/None/null/g
-silent! %s/\v:@<! \((.{-},.{-})\)%( -\>)@!/ [\1]/g
+silent! %s/\v:@<! \((.{-},.{-})\)%( [-=]\>)@!/ [\1]/g
 silent! %s/\vjson.dumps\(/JSON.stringify(/g
 silent! %s/\vjson.loads\(/JSON.parse(/g
 silent! %s/"""/###/g
@@ -37,3 +37,7 @@ silent! %s/\*args/args/g
 silent! %s/\*\*kwargs/kwargs/g
 silent! %s/\v\[([0-9]+):\]/.substr(\1)/g
 silent! %s/\v([^ ]*)\.copy\(\)/JSON.parse(JSON.stringify(\1))/g
+"for key, value in attrs.items()
+silent! %s/\vfor ([a-z]+), ([a-z]+) in ([a-z]+)\.items\(\)/for own \1, \2 of \3/
+"getattr(res, key)
+silent! %s/\vgetattr\(([a-z]+),\s*([a-z]+)\)/\1[\2]/g
