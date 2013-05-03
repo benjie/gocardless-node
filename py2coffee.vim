@@ -31,6 +31,9 @@ for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 endfor
 silent! %s/\v%(^ *)@<=test ([a-z ]*): /it '\1', /g
 silent! %s/\vclass ([A-Za-z]+)TestCase\(.*\)/describe '\1', ->/
+silent! %s/\vclass ([A-Za-z]+)\(object\)/class \1/
+silent! %s/\vclass ([A-Za-z]+)\((.*)\)/class \1 extends \2/
 silent! %s/\*args/args/g
 silent! %s/\*\*kwargs/kwargs/g
 silent! %s/\v\[([0-9]+):\]/.substr(\1)/g
+silent! %s/\v([^ ]*)\.copy\(\)/JSON.parse(JSON.stringify(\1))/g
