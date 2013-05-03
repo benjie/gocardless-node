@@ -20,3 +20,14 @@ for i in [1, 2, 3, 4, 5]
   silent! %s/\n\n\n/\r\r/g
 endfor
 silent! %s/ is not null/ isnt null/g
+
+silent! %s/\v\@assertEqual\((.*), (.*)\)/\1.should.equal \2/
+silent! %s/\v\@assertTrue\((.*)\)/\1.should.be.true/
+silent! %s/\v\@assertFalse\((.*)\)/\1.should.be.false/
+silent! %s/\v%(^[^"]*)@<=u"/"/g
+silent! %s/\vu"%([^"]*"[^"]*$)@=/"/g
+for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  silent! %s/\v%(^ *test[a-z ]*)@<=([A-Z])%([a-zA-Z]*: )@=/ \l\1/g
+endfor
+silent! %s/\v%(^ *)@<=test ([a-z ]*): /it '\1', /g
+silent! %s/\vclass ([A-Za-z]+)TestCase\(.*\)/describe '\1', ->/
