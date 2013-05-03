@@ -21,7 +21,9 @@ module.exports = {
       if Array.isArray val
         result[key+'[]'] = val
       else if typeof val is 'object'
-        result[key] = rewriteArrayKeys val
+        obj = @toQueryObject val
+        for k,v of obj
+          result["#{key}[#{k}]"] = v
       else
         result[key] = val
     return result

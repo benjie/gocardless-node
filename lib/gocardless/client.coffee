@@ -114,7 +114,10 @@ module.exports = class GoCardlessClient
     ###
     Bill.findWithClient(id, @, callback)
 
-  createBill: (amount, pre_auth_id, name=null, description=null) ->
+  createBill: (amount, pre_auth_id, details, callback) ->
+    if typeof details is 'function'
+      callback = details
+      details = {name:null, description:null}
     ###Creates a new bill under an existing pre_authorization
 
     :param amount: The amount to bill
@@ -124,7 +127,7 @@ module.exports = class GoCardlessClient
     :param description: A description for this bill
 
     ###
-    return Bill.createUnderPreauth(amount, pre_auth_id, self, name=name, description=description)
+    Bill.createUnderPreauth(amount, pre_auth_id, @, details, callback)
 
   newSubscriptionUrl: (amount, interval_length, interval_unit, name=null, description=null, interval_count=null, start_at=null, expires_at=null, redirect_uri=null, cancel_uri=null, state=null, user=null, setup_fee=null) ->
     ###Generate a url for creating a new subscription
@@ -248,7 +251,7 @@ module.exports = class GoCardlessClient
   # documentation
   @::newPreAuthorizationUrl = @::newPreauthorizationUrl
 
-  confirmResource: (params) ->
+  confirmResource: (params, callback) ->
     ###Confirm a payment
 
     This send a post request to the confirmation URI for a payment.
@@ -260,18 +263,18 @@ module.exports = class GoCardlessClient
     - state (if any)
     ###
     keys = ["resource_uri", "resource_id", "resource_type", "state"]
-    to_check = dict([[k, v] for k, v in params.items() if k in keys])
-    signature = generateSignature(to_check, @_app_secret)
-    if not signature == params["signature"]
-      raise SignatureError("Invalid signature when confirming resource")
-    auth_string = base64.b64encode("{0}:{1}".format(
-      @app_id, @_app_secret))
+    to_check = {}
+    to_check[k] = v for k, v of params when keys.indexOf(k) isnt -1
+    signature = gocardless.utils.generateSignature(to_check, @app_secret)
+    if signature isnt params["signature"]
+      throw new SignatureError("Invalid signature when confirming resource")
+    auth_string = new Buffer("#{@app_id}:#{@app_secret}").toString 'base64'
     to_post = {
       "resource_id": params["resource_id"],
       "resource_type": params["resource_type"],
     }
-    auth_details = [@app_id, @_app_secret]
-    @apiPost("/confirm", to_post, auth=auth_details)
+    #auth_details = [@app_id, @app_secret]
+    @apiPost("/confirm", to_post, callback)
 
   newMerchantUrl: (redirect_uri, state=null, merchant=null) ->
     ###Get a URL for managing a new merchant
@@ -310,8 +313,7 @@ module.exports = class GoCardlessClient
       params["state"] = state
     if merchant
       params["merchant"] = merchant
-    return "{0}/oauth/authorize?{1}".format(@base_url,
-                        toQuery(params))
+    return "#{@base_url}/oauth/authorize?#{utils.toQuery(params)}"
 
   fetchAccessToken: (redirect_uri, authorization_code) ->
     ###Fetch the access token for a merchant
@@ -337,7 +339,7 @@ module.exports = class GoCardlessClient
     query = toQuery(params)
     url = "/oauth/access_token?#{query}"
     # have to use _request so we don't add apiBase to the url
-    auth_details = [@app_id, @_app_secret]
+    auth_details = [@app_id, @app_secret]
     result = @_request("post", url, auth=auth_details)
     @_access_token = result["access_token"]
     @_merchant_id = result["scope"].split(":")[1]
@@ -353,5 +355,5 @@ module.exports = class GoCardlessClient
     :param params: A dictionary of data to validate, must include
       the key "signature"
     ###
-    return signatureValid(params, @_app_secret)
+    return signatureValid(params, @app_secret)
 

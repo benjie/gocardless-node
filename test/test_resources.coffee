@@ -7,6 +7,7 @@ Client = gocardless.Client
 {Resource, Subscription, Bill, PreAuthorization} = gocardless.resources
 
 mock_account_details = fixtures.mock_account_details
+createMockAttrs = fixtures.createMockAttrs
 
 class TestResource extends Resource
   endpoint: "/testendpoint/:id"
@@ -15,7 +16,6 @@ class TestResource extends Resource
     attrs = createMockAttrs(attrs)
     super
 
-createMockAttrs = fixtures.createMockAttrs
 
 describe 'Resource', ->
   it 'endpoint declared by class', ->
