@@ -4,6 +4,7 @@ querystring = require 'querystring'
 gently = new (require 'gently')
 fixtures = require './fixtures'
 
+utils = gocardless.utils
 Client = gocardless.Client
 ClientError = gocardless.exceptions.ClientError
 
@@ -74,8 +75,7 @@ describe 'Client', ->
     myclient = createMockClient(account_details)
     myclient.base_url.should.equal 'https://abc.gocardless.com'
 
-  it 'get merchant'
-  ###, ->
+  it 'get merchant' , ->
     gently.expect gocardless.Request.prototype, 'perform', (cb) ->
       cb null, fixtures.merchant_json
 
@@ -83,23 +83,20 @@ describe 'Client', ->
       should.not.exist err
       should.exist merchant
       merchant.id.should.equal account_details.merchant_id
-      ###
 
-  _getResourceTester = (resource_name, resource_fixture) ->
-    expected_klass = getattr(sys.modules["gocardless.resources"], utils.camelize(resource_name))
-    WiTh patch.object(client, 'api_get') ->
-      client.api_get.return_value = resource_fixture
-      obj = getattr(client, resource_name)("1")
-      resource_fixture["id"].should.equal obj.id
-      @assertIsInstance(obj, expected_klass)
+  _getResourceTester = (resource_name, resource_fixture, done) ->
+    klassName = utils.camelize(resource_name)
+    expectedKlass = gocardless.resources[klassName]
+    gently.expect gocardless.Client.prototype, 'apiGet', (path, cb) ->
+      cb null, resource_fixture
+    client[resource_name] "1", (err, obj) ->
+      should.not.exist err
+      resource_fixture.id.should.equal obj.id
+      obj.should.be.instanceOf expectedKlass
+      done()
 
-  it 'get subscription'
-  ###, ->
-    _getResourceTester("subscription", fixtures.subscription_json)
-    ###
+  it 'get subscription', (done) ->
+    _getResourceTester("subscription", fixtures.subscription_json, done)
 
-  it 'get user'
-  ###, ->
-    _getResourceTester("user", createMockAttrs({}))
-    ###
-
+  it 'get user', (done) ->
+    _getResourceTester("user", fixtures.createMockAttrs({}), done)

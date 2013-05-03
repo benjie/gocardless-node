@@ -4,6 +4,7 @@ Request = gocardless.Request
 
 utils = gocardless.utils
 {ClientError, SignatureError} = gocardless.exceptions
+{Bill, Merchant, PreAuthorization, Resource, Subscription, User} = gocardless.resources
 
 API_PATH = '/api/v1'
 BASE_URLS = {
@@ -83,35 +84,35 @@ module.exports = class GoCardlessClient
       return callback err if err
       callback null, new Merchant details
 
-  user: (id) ->
+  user: (id, callback) ->
     ###
     Find a user by id
 
     :param id: The users id
     ###
-    return User.findWithClient(id, self)
+    User.findWithClient(id, @, callback)
 
-  preAuthorization: (id) ->
+  preAuthorization: (id, callback) ->
     ###
     Find a pre authorization with id `id`
 
     :params id: The pre authorization id
     ###
-    return PreAuthorization.findWithClient(id, self)
+    PreAuthorization.findWithClient(id, @, callback)
 
-  subscription: (id) ->
+  subscription: (id, callback) ->
     ###
     Returns a single subscription
 
     :param id: The subscription id, String
     ###
-    return Subscription.findWithClient(id, self)
+    Subscription.findWithClient(id, @, callback)
 
-  bill: (id) ->
+  bill: (id, callback) ->
     ###
     Find a bill with id `id`
     ###
-    return Bill.findWithClient(id, self)
+    Bill.findWithClient(id, @, callback)
 
   createBill: (amount, pre_auth_id, name=null, description=null) ->
     ###Creates a new bill under an existing pre_authorization

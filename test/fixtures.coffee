@@ -1,4 +1,18 @@
 module.exports =
+  createMockAttrs: (to_merge) ->
+    ###
+    Creats an attribute set for creating a resource from,
+    includes the basic created, modified and id keys. Merges
+    that with to_merge
+    ###
+    attrs = {
+      "created_at": "2012-04-18T17:53:12Z",
+      "id": "1",
+      "merchant_id": "amerchantid"
+    }
+    to_merge[k] = v for k, v of attrs
+    return to_merge
+
   merchant_json: {
      "created_at": "2011-11-18T17:07:09Z",
      "description": null,
@@ -20,7 +34,6 @@ module.exports =
      }
   }
 
-
   subscription_json: {
      "amount":"44.0",
      "interval_length":1,
@@ -40,7 +53,6 @@ module.exports =
         "bills":"https://gocardless.com/api/v1/merchants/WOQRUJU9OH2HH1/bills?source_id=1580"
      }
   }
-
 
   bill_json: {
      "amount": "10.00",

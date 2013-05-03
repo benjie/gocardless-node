@@ -1,7 +1,7 @@
 "silent! %s/    /  /g
 silent! %s/\vdef (.*)(\(.*\)):/\1: \2 ->/
 for i in [1, 2, 3, 4, 5]
-  silent! %s/\v[a-z]@<=_([a-z])%([a-z]*: )@=/\u\1/i
+  silent! %s/\v[a-z]@<=_([a-z])%([a-z]*: .*-\>$)@=/\u\1/i
   silent! %s/\v[a-z]@<=_([a-z])%([a-z]*\()@=/\u\1/i
 endfor
 silent! %s/\v\(self, /(/

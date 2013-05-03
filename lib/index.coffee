@@ -7,5 +7,6 @@ version = details.version
 exports.getVersion = -> version
 exports.exceptions = require './gocardless/exceptions'
 exports.utils = require './gocardless/utils'
+exports.resources = require './gocardless/resources'
 exports.Request = require('./gocardless/request')
 exports.Client = require('./gocardless/client')
