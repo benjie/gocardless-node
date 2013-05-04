@@ -78,8 +78,10 @@ module.exports = class GoCardlessClient
 
     request.setPayload(data)
     request.perform (err, details) ->
-      if err or details?.error?
-        return callback new ClientError "Error calling API, message was: "+(details?.error ? err.message)
+      if err?
+        return callback new ClientError "Error calling API, message was: "+(err.message)
+      else if details?.error?
+        return callback new ClientError "Error from API, message was: "+(details.error)
       else
         return callback null, details
 
@@ -261,13 +263,12 @@ module.exports = class GoCardlessClient
     signature = gocardless.utils.generateSignature(to_check, @app_secret)
     if signature isnt params["signature"]
       throw new SignatureError("Invalid signature when confirming resource")
-    auth_string = new Buffer("#{@app_id}:#{@app_secret}").toString 'base64'
     to_post = {
       "resource_id": params["resource_id"],
       "resource_type": params["resource_type"],
     }
-    #auth_details = [@app_id, @app_secret]
-    @apiPost("/confirm", to_post, callback)
+    auth_details = [@app_id, @app_secret]
+    @_request('post', "/confirm", to_post, callback, auth_details)
 
   newMerchantUrl: (redirect_uri, {state, merchant}={}) ->
     ###Get a URL for managing a new merchant

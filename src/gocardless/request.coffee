@@ -22,6 +22,8 @@ class Request
     return method in ['get', 'post', 'put']
 
   useHttpAuth: (username, password) ->
+    if Array.isArray username
+      [username, password] = username
     @_opts.auth = [username, password]
 
   useBearerAuth: (token) ->
@@ -34,6 +36,7 @@ class Request
       @_opts.headers['Content-Type'] = 'application/json'
       # And JSON encode the data
       @_opts.data = JSON.stringify(payload)
+      @_opts.headers['Content-Length'] = new Buffer(@_opts.data.length, 'utf8').length
 
   perform: (callback) ->
     parsed = nodeUrl.parse @_url
@@ -43,7 +46,7 @@ class Request
       method: @_method
       headers: @_opts.headers
     }
-    options.auth = @_opts.auth if @_opts.auth?.length
+    options.auth = @_opts.auth.join(":") if @_opts.auth?.length
 
     req = https.request options, (res) ->
       data = ""
