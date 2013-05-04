@@ -1,5 +1,6 @@
 gocardless = require '../'
 utils = gocardless.utils
+ValueError = gocardless.exceptions.ValueError
 
 nonce = ->
   letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/"
@@ -47,11 +48,11 @@ class UrlBuilder
     signature = utils.generateSignature(param_dict, @client.app_secret)
     param_dict["signature"] = signature
 
-    url = "#{@client.getBaseUrl()}/connect/#{params.resource_name}/new?#{utils.toQuery(param_dict)}"
+    url = "#{@client.base_url}/connect/#{params.resource_name}/new?#{utils.toQuery(param_dict)}"
     return url
 
 class BasicParams
-  constructor: (amount, merchant_id, name=null, description=null, user=null) ->
+  constructor: (amount, merchant_id, {name, description, user}) ->
     unless amount > 0
       throw new ValueError("amount must be positive, value passed was #{amount}")
     @amount = amount
@@ -76,9 +77,7 @@ class BasicParams
     return result
 
 class PreAuthorizationParams
-
-  constructor: (max_amount, merchant_id, interval_length, interval_unit, expires_at=null, name=null, description=null, interval_count=null, calendar_intervals=null, user=null, setup_fee=null) ->
-
+  constructor: (max_amount, merchant_id, interval_length, interval_unit, {expires_at, name, description, interval_count, calendar_intervals, user, setup_fee}={}) ->
     @merchant_id = merchant_id
     @resource_name = "pre_authorizations"
 
@@ -103,8 +102,8 @@ class PreAuthorizationParams
     @interval_unit = interval_unit
 
     if expires_at
-      if (expires_at - datetime.datetime.now()).totalSeconds() < 0
-        time_str = expires_at.isoformat()
+      if (+expires_at - +new Date()) < 0
+        time_str = expires_at.toISOString()
         throw new ValueError("expires_at must be in the future, date passed was #{time_str}")
       @expires_at = expires_at
     else
@@ -117,8 +116,8 @@ class PreAuthorizationParams
     else
       @interval_count = null
 
-    @name = name if name else null
-    @description = description if description else null
+    @name = name ? null
+    @description = description ? null
     @calendar_intervals = null
     if calendar_intervals
       @calendar_intervals = calendar_intervals
@@ -139,13 +138,13 @@ class PreAuthorizationParams
 class BillParams extends BasicParams
 
   constructor: (amount, merchant_id, {name, description, user}) ->
-    BasicParams.constructor(amount, merchant_id, {name, user, description})
+    super
     @resource_name = "bills"
 
 class SubscriptionParams extends BasicParams
 
   constructor: (amount, merchant_id, interval_length, interval_unit, {name, description, start_at, expires_at, interval_count, user, setup_fee}) ->
-    BasicParams.constructor(amount, merchant_id, user=user, description=description, name=name)
+    super
     @resource_name = "subscriptions"
     @merchant_id = merchant_id
 
@@ -168,7 +167,7 @@ class SubscriptionParams extends BasicParams
       @start_at = start_at
 
     if expires_at and start_at
-      if (expires_at - start_at).totalSeconds() < 0
+      if (expires_at - start_at) < 0
         throw new ValueError("start_at must be before expires_at")
 
     if interval_count
@@ -176,17 +175,17 @@ class SubscriptionParams extends BasicParams
         throw new ValueError("interval_count must be positive value passed was #{interval_count}")
       @interval_count = interval_count
 
-    @name = name if name else null
-    @description = description if description else null
+    @name = name ? null
+    @description = description ? null
     @setup_fee = setup_fee
 
-    @attrnames.extend([
+    @attrnames = @attrnames.concat([
       "description", "interval_count", "interval_unit",
       "interval_length", "expires_at", "start_at", "setup_fee"
     ])
 
   checkDateInFuture: (date, argname) ->
-    if (date - datetime.datetime.now()).totalSeconds() < 0
+    if (+date - new Date()) < 0
       throw new ValueError("#{argname} must be in the future, date passed was#{date.toISOString()}")
 
   toDict: ->

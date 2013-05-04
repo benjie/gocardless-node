@@ -3,5 +3,6 @@ class GoCardlessError extends Error
     super
 class ClientError extends GoCardlessError
 class SignatureError extends GoCardlessError
+class ValueError extends GoCardlessError
 
-module.exports = {ClientError, SignatureError}
+module.exports = {ClientError, SignatureError, ValueError}

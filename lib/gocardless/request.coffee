@@ -3,7 +3,7 @@ nodeUrl = require 'url'
 gocardless = require '../'
 
 utils = gocardless.utils
-{ClientError, SignatureError} = gocardless.exceptions
+{ClientError, SignatureError, ValueError} = gocardless.exceptions
 
 class Request
   constructor: (method, url) ->

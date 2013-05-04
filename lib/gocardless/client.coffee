@@ -3,8 +3,9 @@ gocardless = require '../'
 Request = gocardless.Request
 
 utils = gocardless.utils
-{ClientError, SignatureError} = gocardless.exceptions
+{ClientError, SignatureError, ValueError} = gocardless.exceptions
 {Bill, Merchant, PreAuthorization, Resource, Subscription, User} = gocardless.resources
+urlbuilder = gocardless.urlbuilder
 
 API_PATH = '/api/v1'
 BASE_URLS = {
@@ -56,17 +57,24 @@ module.exports = class GoCardlessClient
     ###
     return @_request('delete', path, null, callback)
 
-  _request: (method, path, data, callback) ->
+  _request: (method, path, data, callback, auth) ->
     ###
     Send a request to the GoCardless API servers.
 
     :param method: the HTTP method to use (e.g. +:get+, +:post+)
     :param path: the path fragment of the URL
     ###
+    if typeof data is 'function'
+      auth = callback
+      callback = data
+      data = null
     request_url = @base_url + API_PATH + path
     request = new Request(method, request_url)
 
-    request.useBearerAuth(@access_token)
+    if auth?
+      request.useHttpAuth auth
+    else
+      request.useBearerAuth(@access_token)
 
     request.setPayload(data)
     request.perform (err, details) ->
@@ -79,7 +87,7 @@ module.exports = class GoCardlessClient
     ###
     Returns the current Merchant's details.
     ###
-    merchant_url = '/merchants/%s' % @_merchant_id
+    merchant_url = "/merchants/#{@merchant_id}"
     @apiGet merchant_url, (err, details) ->
       return callback err if err
       callback null, new Merchant details
@@ -129,7 +137,7 @@ module.exports = class GoCardlessClient
     ###
     Bill.createUnderPreauth(amount, pre_auth_id, @, details, callback)
 
-  newSubscriptionUrl: (amount, interval_length, interval_unit, name=null, description=null, interval_count=null, start_at=null, expires_at=null, redirect_uri=null, cancel_uri=null, state=null, user=null, setup_fee=null) ->
+  newSubscriptionUrl: (amount, interval_length, interval_unit, {name, description, interval_count, start_at, expires_at, redirect_uri, cancel_uri, state, user, setup_fee}={}) ->
     ###Generate a url for creating a new subscription
 
     :param amount: The amount to charge each time
@@ -162,18 +170,11 @@ module.exports = class GoCardlessClient
     :param setupFee: A one off payment which will be taken at the start
       of the subscription.
     ###
-    params = urlbuilder.SubscriptionParams(
-      amount, @_merchant_id,
-      interval_length, interval_unit, name=name,
-      description=description, interval_count=interval_count,
-      expires_at=expires_at, start_at=start_at, user=user,
-      setup_fee=setup_fee
-    )
-    builder = urlbuilder.UrlBuilder(self)
-    return builder.buildAndSign(params, redirect_uri=redirect_uri,
-                    cancel_uri=cancel_uri, state=state)
+    params = new urlbuilder.SubscriptionParams( amount, @merchant_id, interval_length, interval_unit, {name, description, interval_count, expires_at, start_at, user, setup_fee})
+    builder = new urlbuilder.UrlBuilder(@)
+    return builder.buildAndSign(params, {redirect_uri, cancel_uri, state})
 
-  newBillUrl: (amount, name=null, description=null, redirect_uri=null, cancel_uri=null, state=null, user=null) ->
+  newBillUrl: (amount, {name, description, redirect_uri, cancel_uri, state, user}={}) ->
     ###Generate a url for creating a new bill
 
     :param amount: The amount to bill the customer
@@ -193,13 +194,11 @@ module.exports = class GoCardlessClient
 
 
     ###
-    params = urlbuilder.BillParams(amount, @_merchant_id, name=name,
-                     description=description, user=user)
-    builder = urlbuilder.UrlBuilder(self)
-    return builder.buildAndSign(params, redirect_uri=redirect_uri,
-                    cancel_uri=cancel_uri, state=state)
+    params = new urlbuilder.BillParams(amount, @merchant_id, {name, description, user})
+    builder = new urlbuilder.UrlBuilder(@)
+    return builder.buildAndSign(params, {redirect_uri, cancel_uri, state})
 
-  newPreauthorizationUrl: (max_amount, interval_length, interval_unit, expires_at=null, name=null, description=null, interval_count=null, calendar_intervals=null, redirect_uri=null, cancel_uri=null, state=null, user=null, setup_fee=null) ->
+  newPreauthorizationUrl: (max_amount, interval_length, interval_unit, {expires_at, name, description, interval_count, calendar_intervals, redirect_uri, cancel_uri, state, user, setup_fee}={}) ->
     ###Get a url for creating new pre_authorizations
 
     :param maxAmount: A float which is the maximum amount for this
@@ -237,15 +236,9 @@ module.exports = class GoCardlessClient
       of the subscription.
 
     ###
-    params = urlbuilder.PreAuthorizationParams(
-      max_amount, @_merchant_id, interval_length, interval_unit,
-      expires_at=expires_at, name=name, description=description,
-      interval_count=interval_count, user=user,
-      calendar_intervals=calendar_intervals, setup_fee=setup_fee
-    )
-    builder = urlbuilder.UrlBuilder(self)
-    return builder.buildAndSign(params, redirect_uri=redirect_uri,
-                    cancel_uri=cancel_uri, state=state)
+    params = new urlbuilder.PreAuthorizationParams( max_amount, @merchant_id, interval_length, interval_unit, { expires_at, name, description, interval_count, user, calendar_intervals, setup_fee})
+    builder = new urlbuilder.UrlBuilder(@)
+    return builder.buildAndSign(params, {redirect_uri, cancel_uri, state})
 
   # Create an alias to new_preauthorization_url to conform to the
   # documentation
@@ -276,7 +269,7 @@ module.exports = class GoCardlessClient
     #auth_details = [@app_id, @app_secret]
     @apiPost("/confirm", to_post, callback)
 
-  newMerchantUrl: (redirect_uri, state=null, merchant=null) ->
+  newMerchantUrl: (redirect_uri, {state, merchant}={}) ->
     ###Get a URL for managing a new merchant
 
     This method creates a URL which partners should redirect
@@ -315,7 +308,7 @@ module.exports = class GoCardlessClient
       params["merchant"] = merchant
     return "#{@base_url}/oauth/authorize?#{utils.toQuery(params)}"
 
-  fetchAccessToken: (redirect_uri, authorization_code) ->
+  fetchAccessToken: (redirect_uri, authorization_code, callback) ->
     ###Fetch the access token for a merchant
 
     Takes the authorization code obtained from a merchant redirect
@@ -336,14 +329,15 @@ module.exports = class GoCardlessClient
       "redirect_uri": redirect_uri,
       "grant_type": "authorization_code"
     }
-    query = toQuery(params)
+    query = utils.toQuery(params)
     url = "/oauth/access_token?#{query}"
     # have to use _request so we don't add apiBase to the url
     auth_details = [@app_id, @app_secret]
-    result = @_request("post", url, auth=auth_details)
-    @_access_token = result["access_token"]
-    @_merchant_id = result["scope"].split(":")[1]
-    return @_access_token
+    next = (err, result) =>
+      @access_token = result["access_token"]
+      @merchant_id = result["scope"].split(":")[1]
+      callback null, @access_token
+    @_request "post", url, null, next, auth_details
 
   validateWebhook: (params) ->
     ###Check whether a webhook signature is valid

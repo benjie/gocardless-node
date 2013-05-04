@@ -128,7 +128,7 @@ class PreAuthorization extends Resource
   date_fields: _super::date_fields.concat ["expires_at", "next_interval_start"]
   reference_fields: ["user_id", "merchant_id"]
 
-  createBill: (amount, name=null, description=null) ->
+  createBill: (amount, {name, description}) ->
     return Bill.createUnderPreauth(amount, @id, @client, {name:name, description:description})
 
   cancel: (callback) ->

@@ -138,7 +138,7 @@ describe 'Resource', ->
         name.should.equal "aname"
         description.should.equal "adesc"
       pre_auth = new PreAuthorization(fixtures.preauth_json, null)
-      pre_auth.createBill(10, name="aname", description="adesc")
+      pre_auth.createBill(10, {name:"aname", description:"adesc"})
 
   describe 'BillRetry', ->
 

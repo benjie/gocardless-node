@@ -7,7 +7,7 @@ fixtures = require './fixtures'
 
 utils = gocardless.utils
 Client = gocardless.Client
-{ClientError, SignatureError} = gocardless.exceptions
+{ClientError, SignatureError, ValueError} = gocardless.exceptions
 
 mock_account_details = fixtures.mock_account_details
 createMockAttrs = fixtures.createMockAttrs
@@ -186,7 +186,7 @@ describe 'UrlBuilder', ->
     merchant_id: merchant_id
     app_secret: app_secret
     app_id: app_id
-    getBaseUrl: -> "https://gocardless.com"
+    base_url: "https://gocardless.com"
   }
   urlbuilder = new gocardless.urlbuilder.UrlBuilder(mock_client)
 
@@ -308,12 +308,107 @@ describe 'MerchantUrl', ->
           "email":"emailemail.com"
           }
         }
-    url = client.newMerchantUrl("http://someutl/somepath", merchant=merchant)
+    url = client.newMerchantUrl("http://someutl/somepath", {merchant:merchant})
     params = getUrlParams(url)
     params["merchant[name]"].should.equal "merchname"
     params["merchant[user][first_name]"].should.equal "nameone"
 
   it 'merchant url state', ->
-    url = client.newMerchantUrl("http://someurl", state="thestate")
+    url = client.newMerchantUrl("http://someurl", {state:"thestate"})
     params = getUrlParams(url)
     params["state"].should.equal "thestate"
+
+  it 'fetch client access token basic authorization', (done) ->
+    expected_data = {
+      "client_id":mock_account_details["app_id"],
+      "code":mock_auth_code,
+      "redirect_uri":"http://someurl",
+      "grant_type":"authorization_code"
+    }
+    query = utils.toQuery(expected_data)
+    expected_auth = [ mock_account_details["app_id"], mock_account_details["app_secret"]]
+    gently.expect gocardless.Client.prototype, '_request', (method, path, data, cb, auth) ->
+      method.should.equal 'post'
+      path.should.equal "/oauth/access_token?#{query}"
+      auth.should.eql expected_auth
+      cb null, access_token_response
+    next = (err, res) ->
+      done()
+    client.fetchAccessToken expected_data["redirect_uri"], mock_auth_code, next
+
+  it 'fetch client sets access token and merchant id', ->
+    gently.expect gocardless.Client.prototype, '_request', (method, path, data, cb, auth) ->
+      cb null, access_token_response
+    client.fetchAccessToken "http://someuri", "someauthcode", (err, result) ->
+      result.should.equal "thetoken"
+      client.access_token.should.equal "thetoken"
+      client.merchant_id.should.equal "themanagedone"
+
+class Matcher
+  ###Object for comparing objects WiTh an arbitrary comparison function ->
+
+  This is used as a matcher for testing properties of arguments in mocks
+  see http://www.voidspace.org.uk/python/mock/examples.html#matching-any-argument-in-assertions
+  ###
+  constructor: (func) ->
+    func = func
+  __eq__: (other) ->
+    return func(other)
+
+describe 'ClientUrlBuilder', ->
+  ###Integration test for the Client <-> UrlBuilder relationship
+
+  Tests that the url building methods on the client correctly
+  call methods on the urlbuilder class
+  ###
+
+  urlbuilderArgumentCheck = (method, expected_type, args...) ->
+    gently.expect gocardless.urlbuilder.UrlBuilder.prototype, 'buildAndSign', (params, {state, redirect_uri, cancel_uri}={}) ->
+      params.should.be.instanceOf expected_type
+      should.not.exist cancel_uri
+      should.not.exist redirect_uri
+      should.not.exist state
+      return "http://someurl"
+    c = createMockClient(mock_account_details)
+    c[method].apply c, args
+    gently.verify()
+
+  paramsArgumentCheck = (method, params_class, args..., kwargs) ->
+    arg1 = args[0]
+    rest = args.slice(1)
+    klass = params_class
+    expected = gently.expect (a1, merchant, mArgs..., mDict) ->
+      a1.should.equal arg1
+      merchant.should.equal mock_account_details["merchant_id"]
+      mArgs.should.eql rest
+      mDict.should.eql kwargs
+    mock_class = class extends params_class
+      constructor: ->
+        expected.apply @, arguments
+        super
+    gocardless.urlbuilder[params_class.name] = mock_class
+    c = createMockClient(mock_account_details)
+    c[method].apply c, args.concat kwargs
+    gently.verify()
+    mock_class = gocardless.urlbuilder[params_class.name]
+
+  it 'new preauth calls urlbuilder', ->
+    urlbuilderArgumentCheck("newPreauthorizationUrl", gocardless.urlbuilder.PreAuthorizationParams, 3, 7, "day")
+
+  it 'new pre auth calls urlbuilder', ->
+    urlbuilderArgumentCheck("newPreAuthorizationUrl", gocardless.urlbuilder.PreAuthorizationParams, 3, 7, "day")
+
+  it 'new preauth params constructor', ->
+    paramsArgumentCheck("newPreauthorizationUrl", gocardless.urlbuilder.PreAuthorizationParams, 3, 7, "day", {expires_at:new Date(+new Date()+1000000), name:"aname", description:"desc", interval_count:5, calendar_intervals:false, user:{"somekey":"somval"}, setup_fee:null})
+
+  it 'new bill calls urlbuilder', ->
+    urlbuilderArgumentCheck("newBillUrl", gocardless.urlbuilder.BillParams, 4)
+
+  it 'new bill params constructor', ->
+    paramsArgumentCheck("newBillUrl", gocardless.urlbuilder.BillParams, 10, {name:"aname", user:{"key":"val"}, description:"adesc"})
+
+  it 'new subscription calls urlbuilder', ->
+    urlbuilderArgumentCheck("newSubscriptionUrl", gocardless.urlbuilder.SubscriptionParams, 10, 10, "day")
+
+  it 'new sub params constructor', ->
+    paramsArgumentCheck("newSubscriptionUrl", gocardless.urlbuilder.SubscriptionParams, 10, 23, "day", {name:"name", description:"adesc", start_at:new Date(), expires_at:new Date(new Date().getTime() + (100*1000)), interval_count:20, user:{"key":"val"}, setup_fee:20})
