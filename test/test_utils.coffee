@@ -64,4 +64,17 @@ describe 'Utils', ->
       expected = "PreAuthorisation"
       expected.should.equal utils.singularize(to_singularize)
 
+  describe 'ToQuery', ->
+    it 'should support nested objects', ->
+      params = {
+        a: 1
+        b: "Hello"
+        c: {
+          d: 1
+          e: {
+            f: 1
+          }
+        }
+      }
+      utils.toQuery(params).should.equal "a=1&b=Hello&c%5Bd%5D=1&c%5Be%5D%5Bf%5D=1"
 

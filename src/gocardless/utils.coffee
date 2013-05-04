@@ -23,7 +23,9 @@ module.exports = {
       else if typeof val is 'object'
         obj = @toQueryObject val
         for k,v of obj
-          result["#{key}[#{k}]"] = v
+          #Urgh, ugly...
+          k = k.replace /^([^\[]*)(\[|$)/, "[$1]$2"
+          result["#{key}#{k}"] = v
       else
         result[key] = val
     return result
