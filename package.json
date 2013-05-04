@@ -2,7 +2,7 @@
   "name": "gocardless",
   "description": "A Node.JS wrapper for the GoCardless API",
   "version": "0.1.0",
-  "authors": "Benjie Gillam <code@benjiegillam.com>",
+  "author": "Benjie Gillam <code@benjiegillam.com>",
   "dependencies": {},
   "devDependencies": {
     "coffee-script": "~1.6.2",
@@ -15,5 +15,16 @@
     "test": "mocha --compilers coffee:coffee-script --require should",
     "prepublish": "coffee -o lib -c src"
   },
-  "main": "./lib"
+  "main": "./lib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benjie/gocardless-node.git"
+  },
+  "keywords": [
+    "payments",
+    "direct debit",
+    "gocardless",
+    "subscription"
+  ],
+  "license": "MIT"
 }
