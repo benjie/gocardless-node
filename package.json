@@ -1,19 +1,19 @@
 {
   "name": "gocardless",
   "description": "A Node.JS wrapper for the GoCardless API",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "authors": "Benjie Gillam <code@benjiegillam.com>",
-  "dependencies": {
-    "coffee-script": "~1.6.2"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "coffee-script": "~1.6.2",
     "mocha": "~1.9.0",
     "should": "~1.2.2",
     "nock": "~0.17.5",
     "gently": "~0.9.2"
   },
   "scripts": {
-    "test": "mocha --compilers coffee:coffee-script --require should"
+    "test": "mocha --compilers coffee:coffee-script --require should",
+    "prepublish": "coffee -o lib -c src"
   },
   "main": "./lib"
 }
