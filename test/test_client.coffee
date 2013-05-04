@@ -390,7 +390,7 @@ describe 'ClientUrlBuilder', ->
     c = createMockClient(mock_account_details)
     c[method].apply c, args.concat kwargs
     gently.verify()
-    mock_class = gocardless.urlbuilder[params_class.name]
+    gocardless.urlbuilder[params_class.name] = params_class
 
   it 'new preauth calls urlbuilder', ->
     urlbuilderArgumentCheck("newPreauthorizationUrl", gocardless.urlbuilder.PreAuthorizationParams, 3, 7, "day")

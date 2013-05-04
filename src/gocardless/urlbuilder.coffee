@@ -52,7 +52,7 @@ class UrlBuilder
     return url
 
 class BasicParams
-  constructor: (amount, merchant_id, {name, description, user}) ->
+  constructor: (amount, merchant_id, {name, description, user}={}) ->
     unless amount > 0
       throw new ValueError("amount must be positive, value passed was #{amount}")
     @amount = amount
@@ -91,14 +91,13 @@ class PreAuthorizationParams
     @setup_fee = setup_fee
 
     unless interval_length > 0
-      throw new ValueError("interval_length must be positive, value "
-               "passed was #{interval_length}")
+      throw new ValueError("interval_length must be positive, value passed was #{interval_length}")
     @interval_length = interval_length
 
     valid_units = ["month", "day", "week"]
     if interval_unit not in valid_units
-      message = "interval_unit must be one of {0}, value passed was {1}"
-      throw new ValueError(message.format(valid_units, interval_unit))
+      message = "interval_unit must be one of #{valid_units}, value passed was #{interval_unit}"
+      throw new ValueError(message)
     @interval_unit = interval_unit
 
     if expires_at
@@ -137,14 +136,14 @@ class PreAuthorizationParams
 
 class BillParams extends BasicParams
 
-  constructor: (amount, merchant_id, {name, description, user}) ->
+  constructor: (amount, merchant_id, {name, description, user}={}) ->
     super
     @resource_name = "bills"
 
 class SubscriptionParams extends BasicParams
 
-  constructor: (amount, merchant_id, interval_length, interval_unit, {name, description, start_at, expires_at, interval_count, user, setup_fee}) ->
-    super
+  constructor: (amount, merchant_id, interval_length, interval_unit, {name, description, start_at, expires_at, interval_count, user, setup_fee}={}) ->
+    super amount, merchant_id, {name, description, user}
     @resource_name = "subscriptions"
     @merchant_id = merchant_id
 
@@ -154,8 +153,8 @@ class SubscriptionParams extends BasicParams
 
     valid_units = ["month", "day", "week"]
     if interval_unit not in valid_units
-      message = "interval_unit must be one of {0}, value passed was {1}"
-      throw new ValueError(message.format(valid_units, interval_unit))
+      message = "interval_unit must be one of #{valid_units}, value passed was #{interval_unit}"
+      throw new ValueError(message)
     @interval_unit = interval_unit
 
     if expires_at
@@ -181,7 +180,7 @@ class SubscriptionParams extends BasicParams
 
     @attrnames = @attrnames.concat([
       "description", "interval_count", "interval_unit",
-      "interval_length", "expires_at", "start_at", "setup_fee"
+      "interval_length", "expires_at", "start_at", "setup_fee", "user"
     ])
 
   checkDateInFuture: (date, argname) ->
