@@ -1,4 +1,4 @@
-gocardless = require '../lib'
+gocardless = require '../src'
 should = require 'should'
 nock = require 'nock'
 

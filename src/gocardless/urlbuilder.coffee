@@ -71,7 +71,7 @@ class BasicParams
   toDict: ->
     result = {}
     for attrname in @attrnames
-      val = attrname[null]
+      val = @[attrname]
       if val
         result[attrname] = val
     return result
@@ -130,7 +130,7 @@ class PreAuthorizationParams
       "calendar_intervals", "expires_at", "user", "setup_fee"
     ]
     for attrname in attrnames
-      val = attrname[null]
+      val = @[attrname]
       if val
         result[attrname] = val
     return result
@@ -185,13 +185,13 @@ class SubscriptionParams extends BasicParams
     ])
 
   checkDateInFuture: (date, argname) ->
-    if (+date - new Date()) < 0
+    if (+date - +new Date()) < 0
       throw new ValueError("#{argname} must be in the future, date passed was#{date.toISOString()}")
 
   toDict: ->
     result = {}
     for attrname in @attrnames
-      val = attrname[null]
+      val = @[attrname]
       if val
         if attrname in ["start_at", "expires_at"]
           result[attrname] = val.toISOString()

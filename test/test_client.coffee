@@ -1,5 +1,5 @@
 nodeUrl = require 'url'
-gocardless = require '../lib'
+gocardless = require '../src'
 should = require 'should'
 querystring = require 'querystring'
 gently = new (require 'gently')
@@ -411,4 +411,4 @@ describe 'ClientUrlBuilder', ->
     urlbuilderArgumentCheck("newSubscriptionUrl", gocardless.urlbuilder.SubscriptionParams, 10, 10, "day")
 
   it 'new sub params constructor', ->
-    paramsArgumentCheck("newSubscriptionUrl", gocardless.urlbuilder.SubscriptionParams, 10, 23, "day", {name:"name", description:"adesc", start_at:new Date(), expires_at:new Date(new Date().getTime() + (100*1000)), interval_count:20, user:{"key":"val"}, setup_fee:20})
+    paramsArgumentCheck("newSubscriptionUrl", gocardless.urlbuilder.SubscriptionParams, 10, 23, "day", {name:"name", description:"adesc", start_at:new Date(+new Date()+(1000)), expires_at:new Date(+new Date() + (100*1000)), interval_count:20, user:{"key":"val"}, setup_fee:20})

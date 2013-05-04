@@ -1,4 +1,4 @@
-gocardless = require '../lib'
+gocardless = require '../src'
 fixtures = require './fixtures'
 gently = new (require 'gently')
 should = require 'should'
