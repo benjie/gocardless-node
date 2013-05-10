@@ -59,6 +59,7 @@ describe 'Client', ->
       should.not.exist err
       should.exist res
       res.should.eql ["one", "two"]
+    gently.verify()
 
   it 'base url returns the correct url for production', ->
     process.env.GOCARDLESS_ENVIRONMENT = 'production'
@@ -83,6 +84,7 @@ describe 'Client', ->
       should.not.exist err
       should.exist merchant
       merchant.id.should.equal account_details.merchant_id
+    gently.verify()
 
   _getResourceTester = (resource_name, resource_fixture, done) ->
     klassName = utils.camelize(resource_name)
@@ -94,6 +96,7 @@ describe 'Client', ->
       resource_fixture.id.should.equal obj.id
       obj.should.be.instanceOf expectedKlass
       done()
+    gently.verify()
 
   it 'get subscription', (done) ->
     _getResourceTester("subscription", fixtures.subscription_json, done)
@@ -144,6 +147,7 @@ describe 'Client', ->
       bill.should.eql mock_bill
 
       done()
+    gently.verify()
 
 describe 'ConfirmResource', ->
   client = null
@@ -339,6 +343,7 @@ describe 'MerchantUrl', ->
     next = (err, res) ->
       done()
     client.fetchAccessToken expected_data["redirect_uri"], mock_auth_code, next
+    gently.verify()
 
   it 'fetch client sets access token and merchant id', ->
     gently.expect gocardless.Client.prototype, '_request', (method, path, data, cb, auth) ->
@@ -347,6 +352,7 @@ describe 'MerchantUrl', ->
       result.should.equal "thetoken"
       client.access_token.should.equal "thetoken"
       client.merchant_id.should.equal "themanagedone"
+    gently.verify()
 
 class Matcher
   ###Object for comparing objects WiTh an arbitrary comparison function ->
