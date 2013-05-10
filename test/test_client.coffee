@@ -166,17 +166,20 @@ describe 'ConfirmResource', ->
 
   it 'resource posts', (done) ->
     params["signature"] = utils.generateSignature(params, mock_account_details["app_secret"])
-    gently.expect gocardless.Client.prototype, 'apiPost', (path, data, cb) ->
+    gently.expect gocardless.Client.prototype, '_request', (method, path, data, cb, auth) ->
+      method.should.equal 'post'
       path.should.equal "/confirm"
       data.should.eql {
         "resource_type":params["resource_type"],
         "resource_id":params["resource_id"]
       }
+      auth.should.eql [fixtures.mock_account_details.app_id, fixtures.mock_account_details.app_secret]
       # XXX: CHECK THE AUTHENTICATION
       #expected_auth = [mock_account_details["app_id"], mock_account_details["app_secret"]]
       cb(null)
     client.confirmResource params, ->
       done()
+    gently.verify()
 
 describe 'UrlBuilder', ->
   app_secret = "12345"
