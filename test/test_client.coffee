@@ -46,7 +46,8 @@ describe 'Client', ->
       should.not.exist res
       should.exist err
       err.should.be.instanceOf ClientError
-      err.message.should.equal "Error calling API, message was: anerrormessage"
+      err.message.should.equal "Error from API, message was: anerrormessage"
+    gently.verify()
 
   it 'error when result is list', ->
     #Test for an issue where the code which checked if
